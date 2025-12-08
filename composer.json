@@ -1,8 +1,8 @@
 {
-    "name": "shardj/zf1-future",
+    "name": "verticalm2m/zf1-future",
     "description": "Zend Framework 1. The aim is to keep ZF1 working with the latest PHP versions",
     "type": "library",
-    "version": "1.24.4",
+    "version": "1.24.5",
     "keywords": [
         "framework",
         "zf1"
@@ -15,7 +15,8 @@
         "symfony/polyfill-mbstring": "^1.30",
         "symfony/polyfill-php81": "^1.30",
         "symfony/polyfill-php82": "^1.30",
-        "symfony/polyfill-php83": "^1.30"
+        "symfony/polyfill-php83": "^1.30",
+        "symfony/polyfill-php84": "^1.30"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3",

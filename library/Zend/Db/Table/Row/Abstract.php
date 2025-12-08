@@ -100,6 +100,7 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     protected $_primary;
 
+
     /**
      * Constructor.
      *
@@ -125,8 +126,12 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
                 require_once 'Zend/Db/Table/Row/Exception.php';
                 throw new Zend_Db_Table_Row_Exception('Data must be an array');
             }
-            $this->_data = $config['data'];
+            $this->_data = array();
+			foreach ($config['data'] as $col => $val) {
+				$this->_data[$this->_transformColumn($col)] = $val;
+			}
         }
+		
         if (isset($config['stored']) && $config['stored'] === true) {
             $this->_cleanData = $this->_data;
         }
@@ -160,6 +165,9 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             require_once 'Zend/Db/Table/Row/Exception.php';
             throw new Zend_Db_Table_Row_Exception('Specified column is not a string');
         }
+
+		$columnName = strtolower($columnName);
+		
         // Perform no transformation by default
         return $columnName;
     }
@@ -178,7 +186,24 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             require_once 'Zend/Db/Table/Row/Exception.php';
             throw new Zend_Db_Table_Row_Exception("Specified column \"$columnName\" is not in the row");
         }
-        return $this->_data[$columnName];
+		if (is_null($this->_data[$columnName])) return null;
+		if (is_int($this->_data[$columnName])) return strval($this->_data[$columnName]);
+		if (substr($columnName, -3) == '_id') return strval($this->_data[$columnName]);
+		
+        
+        $value = $this->_data[$columnName];
+        if (is_null($value)) {
+            return null;
+        }
+        else if (is_int($value)) {
+            return strval($value);
+        }
+        else if (is_bool($value)) {
+            return ($value ? '1' : '0');
+        }
+        else {
+            return $value;
+        }
     }
 
     /**
@@ -657,7 +682,38 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     public function toArray()
     {
-        return (array)$this->_data;
+        $out = array();
+        foreach ($this->_data as $columnName => $value) {
+			//$out[$columnName] = $value;
+			$colu = strtoupper($columnName);
+			if (is_null($value)) {
+				$out[$colu] = null;
+			}
+			else if (is_int($value)) {
+				$out[$colu] = strval($value);
+			}
+			else if (is_bool($value)) {
+				$out[$colu] = ($value ? '1' : '0');
+			}
+			else {
+				$out[$colu] = $value;
+			}
+        }
+        return $out;
+    }
+
+	/**
+     * Returns the column/value data as an array.
+     *
+     * @return array
+     */
+    public function _toArray()
+    {
+        $out = array();
+        foreach ($this->_data as $columnName => $value) {
+			$out[$columnName] = $value;
+        }
+        return $out;
     }
 
     /**
@@ -666,8 +722,13 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      * @param  array $data
      * @return $this
      */
-    public function setFromArray(array $data)
+    public function setFromArray(array $p_data)
     {
+		$data = array();
+		foreach ($p_data as $columnName => $value) {
+			$data[$this->_transformColumn($columnName)] = $value;
+		}
+		
         $data = array_intersect_key($data, $this->_data);
 
         foreach ($data as $columnName => $value) {
@@ -778,7 +839,7 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             throw new Zend_Db_Table_Row_Exception('Cannot refresh row as parent is missing');
         }
 
-        $this->_data = $row->toArray();
+        $this->_data = $row->_toArray();
         $this->_cleanData = $this->_data;
         $this->_modifiedFields = [];
     }

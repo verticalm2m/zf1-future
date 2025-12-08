@@ -861,6 +861,22 @@ abstract class Zend_Db_Table_Abstract
         return $this->_cols;
     }
 
+    private function array_change_value_case($arr, $type = 0)
+    {
+        $function = $type ? 'strtoupper' : 'strtolower';
+        $newArr = array();
+        //格式化后的数组
+        foreach ($arr as $k => $v) {
+            if (is_array($v)) {
+                $newArr[$k] = array_change_value_case($v, $type);
+            } else {
+                $newArr[$k] = $function($v);
+            }
+        }
+        return $newArr;
+}
+
+
     /**
      * Initialize primary key from metadata.
      * If $_primary is not defined, discover primary keys
@@ -896,6 +912,9 @@ abstract class Zend_Db_Table_Abstract
         }
 
         $cols = $this->_getCols();
+        if (! array_intersect((array) $this->_primary, $cols) == (array) $this->_primary) {
+            $this->_primary = $this->array_change_value_case($this->_primary);
+        }
         if (! array_intersect((array) $this->_primary, $cols) == (array) $this->_primary) {
             require_once 'Zend/Db/Table/Exception.php';
             throw new Zend_Db_Table_Exception("Primary key column(s) ("

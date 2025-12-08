@@ -415,7 +415,28 @@ abstract class Zend_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
         foreach ($this->_rows as $i => $row) {
             $this->_data[$i] = $row->toArray();
         }
-        return $this->_data;
+		
+		$out = array();
+		foreach ($this->_data as $i => $row) {
+            foreach ($row as $col => $val) {
+				//$out[$i][$col] = $val;
+				$colu = strtoupper($col);
+				if (is_null($val)) {
+					$out[$i][$colu] = null;
+				}
+				else if (is_int($val)) {
+					$out[$i][$colu] = strval($val);
+				}
+				else if (is_bool($val)) {
+					$out[$i][$colu] = ($val ? '1' : '0');
+				}
+				else {
+					$out[$i][$colu] = $val;
+				}
+			}
+        }
+		
+        return $out;
     }
 
     protected function _loadAndReturnRow($position)

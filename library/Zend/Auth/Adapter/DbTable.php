@@ -201,6 +201,7 @@ class Zend_Auth_Adapter_DbTable implements Zend_Auth_Adapter_Interface
      */
     public function setIdentityColumn($identityColumn)
     {
+		$identityColumn = strtolower($identityColumn);
         $this->_identityColumn = $identityColumn;
         return $this;
     }
@@ -213,6 +214,7 @@ class Zend_Auth_Adapter_DbTable implements Zend_Auth_Adapter_Interface
      */
     public function setCredentialColumn($credentialColumn)
     {
+		$credentialColumn = strtolower($credentialColumn);
         $this->_credentialColumn = $credentialColumn;
         return $this;
     }
@@ -328,16 +330,18 @@ class Zend_Auth_Adapter_DbTable implements Zend_Auth_Adapter_Interface
             foreach ( (array) $returnColumns as $returnColumn) {
                 if (in_array($returnColumn, $availableColumns)) {
                     $returnObject->{$returnColumn} = $this->_resultRow[$returnColumn];
+                    $returnObject->{strtoupper($resultColumn)} = $returnObject->{$returnColumn};
                 }
             }
             return $returnObject;
 
         } elseif (null !== $omitColumns) {
 
-            $omitColumns = (array) $omitColumns;
+            $omitColumns = array($omitColumns, strtoupper($omitColumns));
             foreach ($this->_resultRow as $resultColumn => $resultValue) {
                 if (!in_array($resultColumn, $omitColumns)) {
                     $returnObject->{$resultColumn} = $resultValue;
+                    $returnObject->{strtoupper($resultColumn)} = $resultValue;
                 }
             }
             return $returnObject;
@@ -346,6 +350,7 @@ class Zend_Auth_Adapter_DbTable implements Zend_Auth_Adapter_Interface
 
             foreach ($this->_resultRow as $resultColumn => $resultValue) {
                 $returnObject->{$resultColumn} = $resultValue;
+				$returnObject->{strtoupper($resultColumn)} = $resultValue;
             }
             return $returnObject;
 

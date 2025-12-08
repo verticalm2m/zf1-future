@@ -1,0 +1,343 @@
+diff -u -r ../Zend-1.12.20/Auth/Adapter/DbTable.php ./Auth/Adapter/DbTable.php
+--- ../Zend-1.12.20/Auth/Adapter/DbTable.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Auth/Adapter/DbTable.php	2024-04-08 17:20:04.000000000 +0200
+@@ -201,6 +201,7 @@
+      */
+     public function setIdentityColumn($identityColumn)
+     {
++		$identityColumn = strtolower($identityColumn);
+         $this->_identityColumn = $identityColumn;
+         return $this;
+     }
+@@ -213,6 +214,7 @@
+      */
+     public function setCredentialColumn($credentialColumn)
+     {
++		$credentialColumn = strtolower($credentialColumn);
+         $this->_credentialColumn = $credentialColumn;
+         return $this;
+     }
+@@ -328,16 +330,18 @@
+             foreach ( (array) $returnColumns as $returnColumn) {
+                 if (in_array($returnColumn, $availableColumns)) {
+                     $returnObject->{$returnColumn} = $this->_resultRow[$returnColumn];
++                    $returnObject->{strtoupper($resultColumn)} = $returnObject->{$returnColumn};
+                 }
+             }
+             return $returnObject;
+ 
+         } elseif (null !== $omitColumns) {
+ 
+-            $omitColumns = (array) $omitColumns;
++            $omitColumns = array($omitColumns, strtoupper($omitColumns));
+             foreach ($this->_resultRow as $resultColumn => $resultValue) {
+                 if (!in_array($resultColumn, $omitColumns)) {
+                     $returnObject->{$resultColumn} = $resultValue;
++                    $returnObject->{strtoupper($resultColumn)} = $resultValue;
+                 }
+             }
+             return $returnObject;
+@@ -346,6 +350,7 @@
+ 
+             foreach ($this->_resultRow as $resultColumn => $resultValue) {
+                 $returnObject->{$resultColumn} = $resultValue;
++				$returnObject->{strtoupper($resultColumn)} = $resultValue;
+             }
+             return $returnObject;
+ 
+diff -u -r ../Zend-1.12.20/Db/Select.php ./Db/Select.php
+--- ../Zend-1.12.20/Db/Select.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Db/Select.php	2024-04-08 17:20:04.000000000 +0200
+@@ -530,6 +530,7 @@
+         }
+ 
+         foreach ($spec as $val) {
++			$val = strtolower($val);
+             // Remove comments from SQL statement
+             $noComments = preg_replace(self::REGEX_SQL_COMMENTS, '$1', (string) $val);
+             if (preg_match(self::REGEX_COLUMN_EXPR_GROUP, $noComments)) {
+@@ -555,6 +556,7 @@
+      */
+     public function having($cond, $value = null, $type = null)
+     {
++		$cond = strtolower($cond);
+         if ($value !== null) {
+             $cond = $this->_adapter->quoteInto($cond, $value, $type);
+         }
+@@ -582,6 +584,7 @@
+      */
+     public function orHaving($cond, $value = null, $type = null)
+     {
++		$cond = strtolower($cond);
+         if ($value !== null) {
+             $cond = $this->_adapter->quoteInto($cond, $value, $type);
+         }
+@@ -619,6 +622,7 @@
+                 if (empty($val)) {
+                     continue;
+                 }
++				$val = strtolower($val);
+                 $direction = self::SQL_ASC;
+                 if (preg_match('/(.*\W)(' . self::SQL_ASC . '|' . self::SQL_DESC . ')\b/si', $val, $matches)) {
+                     $val = trim($matches[1]);
+@@ -853,7 +857,7 @@
+                 'joinType'      => $type,
+                 'schema'        => $schema,
+                 'tableName'     => $tableName,
+-                'joinCondition' => $cond
++                'joinCondition' => strtolower($cond)
+                 );
+             while ($tmpFromParts) {
+                 $currentCorrelationName = key($tmpFromParts);
+@@ -960,13 +964,15 @@
+         $columnValues = array();
+ 
+         foreach (array_filter($cols) as $alias => $col) {
+-            $currentCorrelationName = $correlationName;
++			$currentCorrelationName = $correlationName;
++			if (is_string($alias)) $alias = strtolower($alias);
+             if (is_string($col)) {
+                 // Check for a column matching "<column> AS <alias>" and extract the alias name
+                 $col = trim(str_replace("\n", ' ', $col));
++				
+                 if (preg_match('/^(.+)\s+' . self::SQL_AS . '\s+(.+)$/i', $col, $m)) {
+-                    $col = $m[1];
+-                    $alias = $m[2];
++                    $col = strtolower($m[1]);
++                    $alias = strtolower($m[2]);
+                 }
+                 // Check for columns that look like functions and convert to Zend_Db_Expr
+                 if (preg_match(self::REGEX_COLUMN_EXPR, (string) $col)) {
+@@ -975,6 +981,9 @@
+                     $currentCorrelationName = $m[1];
+                     $col = $m[2];
+                 }
++				else {
++					$col = strtolower($col);
++				}
+             }
+             $columnValues[] = array($currentCorrelationName, $col, is_string($alias) ? $alias : null);
+         }
+@@ -1026,7 +1035,12 @@
+             require_once 'Zend/Db/Select/Exception.php';
+             throw new Zend_Db_Select_Exception("Invalid use of where clause with " . self::SQL_UNION);
+         }
+-
++		
++		// On met en minuscule ce qui est avant le =
++		$condition = preg_replace_callback ('/.*=/', function ($word) {
++   			return strtolower($word[0]);
++		}, $condition);
++		
+         if ($value !== null) {
+             $condition = $this->_adapter->quoteInto($condition, $value, $type);
+         }
+diff -u -r ../Zend-1.12.20/Db/Table/Abstract.php ./Db/Table/Abstract.php
+--- ../Zend-1.12.20/Db/Table/Abstract.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Db/Table/Abstract.php	2024-04-08 17:20:04.000000000 +0200
+@@ -861,6 +861,22 @@
+         return $this->_cols;
+     }
+ 
++    private function array_change_value_case($arr, $type = 0)
++    {
++        $function = $type ? 'strtoupper' : 'strtolower';
++        $newArr = array();
++        //格式化后的数组
++        foreach ($arr as $k => $v) {
++            if (is_array($v)) {
++                $newArr[$k] = array_change_value_case($v, $type);
++            } else {
++                $newArr[$k] = $function($v);
++            }
++        }
++        return $newArr;
++}
++
++
+     /**
+      * Initialize primary key from metadata.
+      * If $_primary is not defined, discover primary keys
+@@ -897,6 +913,9 @@
+ 
+         $cols = $this->_getCols();
+         if (! array_intersect((array) $this->_primary, $cols) == (array) $this->_primary) {
++            $this->_primary = $this->array_change_value_case($this->_primary);
++        }
++        if (! array_intersect((array) $this->_primary, $cols) == (array) $this->_primary) {
+             require_once 'Zend/Db/Table/Exception.php';
+             throw new Zend_Db_Table_Exception("Primary key column(s) ("
+                 . implode(',', (array) $this->_primary)
+diff -u -r ../Zend-1.12.20/Db/Table/Row/Abstract.php ./Db/Table/Row/Abstract.php
+--- ../Zend-1.12.20/Db/Table/Row/Abstract.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Db/Table/Row/Abstract.php	2024-04-08 17:20:04.000000000 +0200
+@@ -100,6 +100,7 @@
+      */
+     protected $_primary;
+ 
++
+     /**
+      * Constructor.
+      *
+@@ -125,8 +126,12 @@
+                 require_once 'Zend/Db/Table/Row/Exception.php';
+                 throw new Zend_Db_Table_Row_Exception('Data must be an array');
+             }
+-            $this->_data = $config['data'];
++            $this->_data = array();
++			foreach ($config['data'] as $col => $val) {
++				$this->_data[$this->_transformColumn($col)] = $val;
++			}
+         }
++		
+         if (isset($config['stored']) && $config['stored'] === true) {
+             $this->_cleanData = $this->_data;
+         }
+@@ -160,6 +165,9 @@
+             require_once 'Zend/Db/Table/Row/Exception.php';
+             throw new Zend_Db_Table_Row_Exception('Specified column is not a string');
+         }
++
++		$columnName = strtolower($columnName);
++		
+         // Perform no transformation by default
+         return $columnName;
+     }
+@@ -178,7 +186,24 @@
+             require_once 'Zend/Db/Table/Row/Exception.php';
+             throw new Zend_Db_Table_Row_Exception("Specified column \"$columnName\" is not in the row");
+         }
+-        return $this->_data[$columnName];
++		if (is_null($this->_data[$columnName])) return null;
++		if (is_int($this->_data[$columnName])) return strval($this->_data[$columnName]);
++		if (substr($columnName, -3) == '_id') return strval($this->_data[$columnName]);
++		
++        
++        $value = $this->_data[$columnName];
++        if (is_null($value)) {
++            return null;
++        }
++        else if (is_int($value)) {
++            return strval($value);
++        }
++        else if (is_bool($value)) {
++            return ($value ? '1' : '0');
++        }
++        else {
++            return $value;
++        }
+     }
+ 
+     /**
+@@ -654,7 +679,38 @@
+      */
+     public function toArray()
+     {
+-        return (array)$this->_data;
++        $out = array();
++        foreach ($this->_data as $columnName => $value) {
++			//$out[$columnName] = $value;
++			$colu = strtoupper($columnName);
++			if (is_null($value)) {
++				$out[$colu] = null;
++			}
++			else if (is_int($value)) {
++				$out[$colu] = strval($value);
++			}
++			else if (is_bool($value)) {
++				$out[$colu] = ($value ? '1' : '0');
++			}
++			else {
++				$out[$colu] = $value;
++			}
++        }
++        return $out;
++    }
++
++	/**
++     * Returns the column/value data as an array.
++     *
++     * @return array
++     */
++    public function _toArray()
++    {
++        $out = array();
++        foreach ($this->_data as $columnName => $value) {
++			$out[$columnName] = $value;
++        }
++        return $out;
+     }
+ 
+     /**
+@@ -663,8 +719,13 @@
+      * @param  array $data
+      * @return Zend_Db_Table_Row_Abstract Provides a fluent interface
+      */
+-    public function setFromArray(array $data)
++    public function setFromArray(array $p_data)
+     {
++		$data = array();
++		foreach ($p_data as $columnName => $value) {
++			$data[$this->_transformColumn($columnName)] = $value;
++		}
++		
+         $data = array_intersect_key($data, $this->_data);
+ 
+         foreach ($data as $columnName => $value) {
+@@ -775,7 +836,7 @@
+             throw new Zend_Db_Table_Row_Exception('Cannot refresh row as parent is missing');
+         }
+ 
+-        $this->_data = $row->toArray();
++        $this->_data = $row->_toArray();
+         $this->_cleanData = $this->_data;
+         $this->_modifiedFields = array();
+     }
+diff -u -r ../Zend-1.12.20/Db/Table/Rowset/Abstract.php ./Db/Table/Rowset/Abstract.php
+--- ../Zend-1.12.20/Db/Table/Rowset/Abstract.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Db/Table/Rowset/Abstract.php	2024-04-08 17:20:04.000000000 +0200
+@@ -407,7 +407,28 @@
+         foreach ($this->_rows as $i => $row) {
+             $this->_data[$i] = $row->toArray();
+         }
+-        return $this->_data;
++		
++		$out = array();
++		foreach ($this->_data as $i => $row) {
++            foreach ($row as $col => $val) {
++				//$out[$i][$col] = $val;
++				$colu = strtoupper($col);
++				if (is_null($val)) {
++					$out[$i][$colu] = null;
++				}
++				else if (is_int($val)) {
++					$out[$i][$colu] = strval($val);
++				}
++				else if (is_bool($val)) {
++					$out[$i][$colu] = ($val ? '1' : '0');
++				}
++				else {
++					$out[$i][$colu] = $val;
++				}
++			}
++        }
++		
++        return $out;
+     }
+ 
+     protected function _loadAndReturnRow($position)
+Only in .: .gitattributes
+Only in .: .gitignore
+diff -u -r ../Zend-1.12.20/Mail/Protocol/Smtp.php ./Mail/Protocol/Smtp.php
+--- ../Zend-1.12.20/Mail/Protocol/Smtp.php	2017-01-12 16:20:16.000000000 +0100
++++ ./Mail/Protocol/Smtp.php	2024-04-08 17:20:04.000000000 +0200
+@@ -203,7 +203,7 @@
+         if ($this->_secure == 'tls') {
+             $this->_send('STARTTLS');
+             $this->_expect(220, 180);
+-            if (!stream_socket_enable_crypto($this->_socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
++            if (!stream_socket_enable_crypto($this->_socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT)) {
+                 /**
+                  * @see Zend_Mail_Protocol_Exception
+                  */
+Only in .: resources
