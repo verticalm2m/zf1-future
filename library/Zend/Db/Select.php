@@ -950,7 +950,7 @@ class Zend_Db_Select
                 'joinType'      => $type,
                 'schema'        => $schema,
                 'tableName'     => $tableName,
-                'joinCondition' => strtolower($cond)
+                'joinCondition' => ($cond != null ? strtolower($cond) : null)
                 ];
             while ($tmpFromParts) {
                 $currentCorrelationName = key($tmpFromParts);
