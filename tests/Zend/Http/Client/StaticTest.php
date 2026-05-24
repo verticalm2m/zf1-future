@@ -116,25 +116,6 @@ class Zend_Http_Client_StaticTest extends TestCase
     }
 
     /**
-     * Test that passing an invalid URI object throws an exception
-     *
-     * @doesNotPerformAssertions
-     */
-    public function testInvalidUriObjectException()
-    {
-        try {
-            $uri = Zend_Uri::factory('mailto:nobody@example.com');
-            $this->_client->setUri($uri);
-            $this->fail('Excepted invalid URI object exception was not thrown');
-        } catch (Zend_Http_Client_Exception $e) {
-            // We're good
-        } catch (Zend_Uri_Exception $e) {
-            // URI is currently unimplemented
-            $this->markTestIncomplete('Zend_Uri_Mailto is not implemented yet');
-        }
-    }
-
-    /**
      * Test that setting the same parameter twice in the query string does not
      * get reduced to a single value only.
      *

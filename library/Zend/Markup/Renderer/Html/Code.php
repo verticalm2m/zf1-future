@@ -47,7 +47,19 @@ class Zend_Markup_Renderer_Html_Code extends Zend_Markup_Renderer_Html_HtmlAbstr
      */
     public function convert(Zend_Markup_Token $token, $text)
     {
-        return highlight_string($text, true);
+        $highlighted = highlight_string($text, true);
+
+        if (preg_match('#^<pre><code[^>]*>(.*)</code></pre>$#s', $highlighted, $matches)) {
+            $code = $matches[1];
+
+            if (strpos($code, '<span') === false) {
+                $code = '<span style="color: #000000">' . $code . '</span>';
+            }
+
+            return '<code>' . $code . '</code>';
+        }
+
+        return $highlighted;
     }
 
 }

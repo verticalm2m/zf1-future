@@ -133,6 +133,7 @@ class Zend_Controller_Action_HelperBroker
     static public function resetHelpers()
     {
         self::$_stack = null;
+        self::$_pluginLoader = null;
         return;
     }
 

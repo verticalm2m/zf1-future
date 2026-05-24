@@ -1271,8 +1271,23 @@ class Zend_Acl_AclTest extends TestCase
      */
     public function testGetRegisteredRolesIsDeprecated()
     {
-        $this->expectException(\PHPUnit\Framework\Error\Notice::class);
-        $this->_acl->getRegisteredRoles();
+        $errorType = null;
+        $errorMessage = null;
+
+        set_error_handler(static function ($errno, $errstr) use (&$errorType, &$errorMessage) {
+            $errorType = $errno;
+            $errorMessage = $errstr;
+            return true;
+        }, E_USER_NOTICE);
+
+        try {
+            $this->_acl->getRegisteredRoles();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame(E_USER_NOTICE, $errorType);
+        $this->assertStringContainsString('getRegisteredRoles() was deprecated', $errorMessage);
     }
 
     /**

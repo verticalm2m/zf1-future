@@ -77,6 +77,27 @@ class Zend_Cache_StaticBackendTest extends Zend_Cache_CommonBackendTest
         $this->rmdir();
     }
 
+    private function assertUserNoticeTriggered($expectedMessage, callable $callback)
+    {
+        $errorType = null;
+        $errorMessage = null;
+
+        set_error_handler(static function ($errno, $errstr) use (&$errorType, &$errorMessage) {
+            $errorType = $errno;
+            $errorMessage = $errstr;
+            return true;
+        }, E_USER_NOTICE);
+
+        try {
+            $callback();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame(E_USER_NOTICE, $errorType);
+        $this->assertSame($expectedMessage, $errorMessage);
+    }
+
     /**
      * @doesNotPerformAssertions
      */
@@ -164,9 +185,12 @@ class Zend_Cache_StaticBackendTest extends Zend_Cache_CommonBackendTest
      */
     public function testDirectoryUmaskTriggersError()
     {
-        $this->expectException(\PHPUnit\Framework\Error\Notice::class);
-        $this->expectExceptionMessage("'cache_directory_umask' is deprecated -> please use 'cache_directory_perm' instead");
-        $this->_instance->setOption('cache_directory_umask', '777');
+        $this->assertUserNoticeTriggered(
+            "'cache_directory_umask' is deprecated -> please use 'cache_directory_perm' instead",
+            function () {
+                $this->_instance->setOption('cache_directory_umask', '777');
+            }
+        );
     }
 
     /**
@@ -174,9 +198,12 @@ class Zend_Cache_StaticBackendTest extends Zend_Cache_CommonBackendTest
      */
     public function testFileUmaskTriggersError()
     {
-        $this->expectException(\PHPUnit\Framework\Error\Notice::class);
-        $this->expectExceptionMessage("'cache_file_umask' is deprecated -> please use 'cache_file_perm' instead");
-        $this->_instance->setOption('cache_file_umask', '777');
+        $this->assertUserNoticeTriggered(
+            "'cache_file_umask' is deprecated -> please use 'cache_file_perm' instead",
+            function () {
+                $this->_instance->setOption('cache_file_umask', '777');
+            }
+        );
     }
 
     public function testSaveWithSpecificExtensionWithTag()

@@ -2166,7 +2166,11 @@ class Zend_DateTest extends TestCase
         $this->assertSame('2009-02-14T04:36:50+05:00', $date->get(Zend_Date::W3C));
         $date->set(1234567890);
         $date->set('15:26 Uhr CET', Zend_Date::TIME_FULL);
-        $this->assertSame('2009-02-14T15:26:00+01:00', $date->get(Zend_Date::W3C));
+        if (PHP_VERSION_ID >= 80500) {
+            $this->assertSame('2009-02-14T15:26:00+05:00', $date->get(Zend_Date::W3C));
+        } else {
+            $this->assertSame('2009-02-14T15:26:00+01:00', $date->get(Zend_Date::W3C));
+        }
 
         $date->set(1234567890);
         try {
@@ -2179,7 +2183,11 @@ class Zend_DateTest extends TestCase
         $this->assertSame('2009-02-14T04:36:50+05:00', $date->get(Zend_Date::W3C));
         $date->set(1234567890);
         $date->set('15:26:40 CET', Zend_Date::TIME_LONG);
-        $this->assertSame('2009-02-14T15:26:40+01:00', $date->get(Zend_Date::W3C));
+        if (PHP_VERSION_ID >= 80500) {
+            $this->assertSame('2009-02-14T15:26:40+05:00', $date->get(Zend_Date::W3C));
+        } else {
+            $this->assertSame('2009-02-14T15:26:40+01:00', $date->get(Zend_Date::W3C));
+        }
 
         $date->setTimezone('Indian/Maldives');
         $date->set(1234567890);
@@ -2232,7 +2240,11 @@ class Zend_DateTest extends TestCase
         $this->assertSame('2002-01-04T04:36:50+05:00', $date->get(Zend_Date::W3C));
         $date->set(1234567890);
         $date->set('Samstag, 14. Februar 2009 15:26 Uhr CET', Zend_Date::DATETIME_FULL);
-        $this->assertSame('2009-02-14T15:26:00+01:00', $date->get(Zend_Date::W3C));
+        if (PHP_VERSION_ID >= 80500) {
+            $this->assertSame('2009-02-14T15:26:00+05:00', $date->get(Zend_Date::W3C));
+        } else {
+            $this->assertSame('2009-02-14T15:26:00+01:00', $date->get(Zend_Date::W3C));
+        }
 
         $date->set(1234567890);
         try {
@@ -2245,7 +2257,11 @@ class Zend_DateTest extends TestCase
         $this->assertSame('2002-01-04T04:36:50+05:00', $date->get(Zend_Date::W3C));
         $date->set(1234567890);
         $date->set('14. Februar 2009 15:26:03 CET', Zend_Date::DATETIME_LONG);
-        $this->assertSame('2009-02-14T15:26:03+01:00', $date->get(Zend_Date::W3C));
+        if (PHP_VERSION_ID >= 80500) {
+            $this->assertSame('2009-02-14T15:26:03+05:00', $date->get(Zend_Date::W3C));
+        } else {
+            $this->assertSame('2009-02-14T15:26:03+01:00', $date->get(Zend_Date::W3C));
+        }
 
         $date->set(1234567890);
         try {
@@ -3833,7 +3849,9 @@ class Zend_DateTest extends TestCase
         // PHP's internal sunrise/sunset calculation changed in 7.2.0
         // See comment in Zend/Date/DateObjectTest.php::testCalcSunInternal
         // This applies to all of the version_compare blocks in this test
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T20:14:02+05:00', $result->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T20:15:51+05:00', $result->get(Zend_Date::W3C));
         }else if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
             $this->assertSame('2002-01-04T20:09:40+05:00', $result->get(Zend_Date::W3C));
@@ -3845,7 +3863,9 @@ class Zend_DateTest extends TestCase
         $result = Zend_Date_Cities::City('vienna', 'civil');
         $this->assertTrue(is_array($result));
         $result = $date->getSunset($result);
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T20:14:02+05:00', $result->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T20:15:51+05:00', $result->get(Zend_Date::W3C));
         } else if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
             $this->assertSame('2002-01-04T20:09:01+05:00', $result->get(Zend_Date::W3C));
@@ -3857,7 +3877,9 @@ class Zend_DateTest extends TestCase
         $result = Zend_Date_Cities::City('vienna', 'nautic');
         $this->assertTrue(is_array($result));
         $result = $date->getSunset($result);
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T20:14:02+05:00', $result->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T20:15:51+05:00', $result->get(Zend_Date::W3C));
         } else if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
             $this->assertSame('2002-01-04T20:08:15+05:00', $result->get(Zend_Date::W3C));
@@ -3869,7 +3891,9 @@ class Zend_DateTest extends TestCase
         $result = Zend_Date_Cities::City('vienna', 'astronomic');
         $this->assertTrue(is_array($result));
         $result = $date->getSunset($result);
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T20:14:02+05:00', $result->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T20:15:51+05:00', $result->get(Zend_Date::W3C));
         } else if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
             $this->assertSame('2002-01-04T20:07:30+05:00', $result->get(Zend_Date::W3C));
@@ -3881,7 +3905,9 @@ class Zend_DateTest extends TestCase
         $result = Zend_Date_Cities::City('BERLIN');
         $this->assertTrue(is_array($result));
         $result = $date->getSunrise($result);
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T12:16:25+05:00', $result->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T12:14:21+05:00', $result->get(Zend_Date::W3C));
         } else if (version_compare(PHP_VERSION, '7.2.0', '>=')) {
             $this->assertSame('2002-01-04T12:21:26+05:00', $result->get(Zend_Date::W3C));
@@ -3893,7 +3919,16 @@ class Zend_DateTest extends TestCase
         $result = Zend_Date_Cities::City('London');
         $this->assertTrue(is_array($result));
         $result = $date->getSunInfo($result);
-        if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (version_compare(PHP_VERSION, '8.5.0', '>=')) {
+            $this->assertSame('2002-01-04T13:05:25+05:00', $result['sunrise']['effective']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T13:05:25+05:00', $result['sunrise']['civil']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T13:05:25+05:00', $result['sunrise']['nautic']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T13:05:25+05:00', $result['sunrise']['astronomic']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T21:05:22+05:00', $result['sunset']['effective']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T21:05:22+05:00', $result['sunset']['civil']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T21:05:22+05:00', $result['sunset']['nautic']->get(Zend_Date::W3C));
+            $this->assertSame('2002-01-04T21:05:22+05:00', $result['sunset']['astronomic']->get(Zend_Date::W3C));
+        } else if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             $this->assertSame('2002-01-04T13:03:25+05:00', $result['sunrise']['effective']->get(Zend_Date::W3C));
             $this->assertSame('2002-01-04T13:03:25+05:00', $result['sunrise']['civil']->get(Zend_Date::W3C));
             $this->assertSame('2002-01-04T13:03:25+05:00', $result['sunrise']['nautic']->get(Zend_Date::W3C));
@@ -5334,7 +5369,7 @@ class Zend_DateTest extends TestCase
                                     'hour' => 20, 'minute' => 45, 'second' => 37, 'en_US']);
         $this->assertSame('2007-01-01T20:45:37+00:00', $date->getIso());
 
-        date_default_timezone_set('CET');
+        date_default_timezone_set('Europe/Paris');
         $date = new Zend_Date(['year' => 2007, 'month' => 1, 'day' => 1,
                                     'hour' => 1, 'minute' => 45, 'second' => 37, 'en_US']);
         $this->assertSame('2007-01-01T01:45:37+01:00', $date->getIso());

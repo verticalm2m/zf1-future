@@ -205,15 +205,6 @@ class Zend_Form_Element_FileTest extends TestCase
         $this->assertSame($validators, $test);
     }
 
-    public function testValidationShouldProxyToAdapter()
-    {
-        $this->markTestIncomplete('Unsure how to accurately test');
-
-        $this->element->setTransferAdapter(new Zend_Form_Element_FileTest_MockAdapter());
-        $this->element->addValidator('Regex', '/([a-z0-9]{13})$/i');
-        $this->assertTrue($this->element->isValid('foo.jpg'));
-    }
-
     public function testDestinationMutatorsShouldProxyToTransferAdapter()
     {
         $adapter = new Zend_Form_Element_FileTest_MockAdapter();

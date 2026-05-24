@@ -255,6 +255,7 @@ class Zend_Controller_Action_HelperBrokerTest extends TestCase
     public function testHelperPullsResponseFromRegisteredActionController()
     {
         $helper = Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer');
+        Zend_Controller_Action_HelperBroker::addHelper(new Zend_Controller_Action_HelperBroker_TestHelper());
 
         $aRequest = new Zend_Controller_Request_Http();
         $aRequest->setModuleName('default')

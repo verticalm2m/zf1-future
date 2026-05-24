@@ -332,7 +332,7 @@ class Zend_Db_Select
             $correlationName = current($correlationNameKeys);
         }
 
-        if (!array_key_exists($correlationName, $this->_parts[self::FROM])) {
+        if (($correlationName === null) || !array_key_exists($correlationName, $this->_parts[self::FROM])) {
             /**
              * @see Zend_Db_Select_Exception
              */
@@ -618,7 +618,6 @@ class Zend_Db_Select
         }
 
         foreach ($spec as $val) {
-			$val = strtolower($val);
             // Remove comments from SQL statement
             $noComments = preg_replace(self::REGEX_SQL_COMMENTS, '$1', (string) $val);
             if (preg_match($this->_regexColumnExprGroup, $noComments)) {
@@ -644,7 +643,6 @@ class Zend_Db_Select
      */
     public function having($cond, $value = null, $type = null)
     {
-		$cond = strtolower($cond);
         if ($value !== null) {
             $cond = $this->_adapter->quoteInto($cond, $value, $type);
         }
@@ -672,7 +670,6 @@ class Zend_Db_Select
      */
     public function orHaving($cond, $value = null, $type = null)
     {
-		$cond = strtolower($cond);
         if ($value !== null) {
             $cond = $this->_adapter->quoteInto($cond, $value, $type);
         }
@@ -710,11 +707,10 @@ class Zend_Db_Select
                 if (empty($val)) {
                     continue;
                 }
-				$val = strtolower($val);
                 $direction = self::SQL_ASC;
                 if (preg_match('/(.*\W)(' . self::SQL_ASC . '|' . self::SQL_DESC . ')\b/si', $val, $matches)) {
                     $val = trim($matches[1]);
-                    $direction = $matches[2];
+                    $direction = strtoupper($matches[2]);
                 }
                 // Remove comments from SQL statement
                 $noComments = preg_replace(self::REGEX_SQL_COMMENTS, '$1', (string) $val);
@@ -950,7 +946,7 @@ class Zend_Db_Select
                 'joinType'      => $type,
                 'schema'        => $schema,
                 'tableName'     => $tableName,
-                'joinCondition' => ($cond != null ? strtolower($cond) : null)
+                'joinCondition' => ($cond != null ? $cond : null)
                 ];
             while ($tmpFromParts) {
                 $currentCorrelationName = key($tmpFromParts);
@@ -1058,14 +1054,13 @@ class Zend_Db_Select
 
         foreach (array_filter($cols) as $alias => $col) {
 			$currentCorrelationName = $correlationName;
-			if (is_string($alias)) $alias = strtolower($alias);
             if (is_string($col)) {
                 // Check for a column matching "<column> AS <alias>" and extract the alias name
                 $col = trim(str_replace("\n", ' ', $col));
 				
                 if (preg_match('/^(.+)\s+' . self::SQL_AS . '\s+(.+)$/i', $col, $m)) {
-                    $col = strtolower($m[1]);
-                    $alias = strtolower($m[2]);
+					$col = $m[1];
+					$alias = $m[2];
                 }
                 // Check for columns that look like functions and convert to Zend_Db_Expr
                 if (preg_match($this->_regexColumnExpr, (string) $col)) {
@@ -1074,9 +1069,6 @@ class Zend_Db_Select
                     $currentCorrelationName = $m[1];
                     $col = $m[2];
                 }
-				else {
-					$col = strtolower($col);
-				}
             }
             $columnValues[] = [$currentCorrelationName, $col, is_string($alias) ? $alias : null];
         }
@@ -1128,11 +1120,6 @@ class Zend_Db_Select
             require_once 'Zend/Db/Select/Exception.php';
             throw new Zend_Db_Select_Exception("Invalid use of where clause with " . self::SQL_UNION);
         }
-		
-		// On met en minuscule ce qui est avant le =
-		$condition = preg_replace_callback ('/.*=/', function ($word) {
-   			return strtolower($word[0]);
-		}, $condition);
 		
         if ($value !== null) {
             $condition = $this->_adapter->quoteInto($condition, $value, $type);

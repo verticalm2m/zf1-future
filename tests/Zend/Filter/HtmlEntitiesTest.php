@@ -217,10 +217,6 @@ class Zend_Filter_HtmlEntitiesTest extends TestCase
      */
     public function testCorrectsForEncodingMismatch()
     {
-        if (version_compare(phpversion(), '5.4', '>=')) {
-            $this->markTestIncomplete('Tested feature ZF-11344 is not available because of PHP bug #63450');
-        }
-
         $string = file_get_contents(dirname(__FILE__) . '/_files/latin-1-text.txt');
 
         // restore_error_handler can emit an E_WARNING; let's ignore that, as
@@ -229,7 +225,7 @@ class Zend_Filter_HtmlEntitiesTest extends TestCase
         $result = $this->_filter->filter($string);
         restore_error_handler();
 
-        $this->assertTrue(strlen($result) > 0);
+        $this->assertStringContainsString('&quot;&quot;', $result);
     }
 
     /**

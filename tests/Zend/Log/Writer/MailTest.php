@@ -94,6 +94,26 @@ class Zend_Log_Writer_MailTest extends TestCase
         Zend_Mail::clearDefaultTransport();
     }
 
+    private function capturePhpError(callable $callback, $levels)
+    {
+        $errorType = null;
+        $errorMessage = null;
+
+        set_error_handler(static function ($errno, $errstr) use (&$errorType, &$errorMessage) {
+            $errorType = $errno;
+            $errorMessage = $errstr;
+            return true;
+        }, $levels);
+
+        try {
+            $callback();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$errorType, $errorMessage];
+    }
+
     /**
      * Tests normal logging, but with multiple messages for a level.
      * @doesNotPerformAssertions
@@ -252,20 +272,23 @@ class Zend_Log_Writer_MailTest extends TestCase
      */
     public function testDestructorMailError()
     {
-        $this->expectException(version_compare(phpversion(), '7.1', '>') ? \PHPUnit\Framework\Error\Error::class : \Error::class);
-        $this->expectExceptionMessage('unable to send log entries via email;');
-        list($mail, $writer, $log) = $this->_getSimpleLogger(false);
+        [$errorType, $errorMessage] = $this->capturePhpError(function () use (&$log) {
+            list($mail, $writer, $log) = $this->_getSimpleLogger(false);
 
-        // Force the send() method to throw the same exception that would be
-        // thrown if, say, the SMTP server couldn't be contacted.
-        $mail->expects($this->any())
-             ->method('send')
-             ->will($this->throwException(new Zend_Mail_Transport_Exception()));
+            // Force the send() method to throw the same exception that would be
+            // thrown if, say, the SMTP server couldn't be contacted.
+            $mail->expects($this->any())
+                 ->method('send')
+                 ->will($this->throwException(new Zend_Mail_Transport_Exception()));
 
-        // Log an error message so that there's something to send via email.
-        $log->err('a bogus error message to force mail sending');
+            // Log an error message so that there's something to send via email.
+            $log->err('a bogus error message to force mail sending');
 
-        unset($log);
+            unset($log);
+        }, E_USER_WARNING);
+
+        $this->assertSame(E_USER_WARNING, $errorType);
+        $this->assertStringContainsString('unable to send log entries via email;', $errorMessage);
     }
 
     /**
@@ -277,21 +300,26 @@ class Zend_Log_Writer_MailTest extends TestCase
      */
     public function testDestructorLayoutError()
     {
-        $this->expectException(version_compare(phpversion(), '7.1', '>') ? \PHPUnit\Framework\Error\Error::class : \Error::class);
-        $this->expectExceptionMessage('exception occurred when rendering layout; unable to set html body for message; message = bogus message');
+        [$errorType, $errorMessage] = $this->capturePhpError(function () use (&$log) {
+            list($mail, $writer, $log, $layout) = $this->_getSimpleLogger(true);
 
-        list($mail, $writer, $log, $layout) = $this->_getSimpleLogger(true);
+            // Force the render() method to throw the same exception that would
+            // be thrown if, say, the layout template file couldn't be found.
+            $layout->expects($this->any())
+                   ->method('render')
+                   ->will($this->throwException(new Zend_View_Exception('bogus message')));
 
-        // Force the render() method to throw the same exception that would
-        // be thrown if, say, the layout template file couldn't be found.
-        $layout->expects($this->any())
-               ->method('render')
-               ->will($this->throwException(new Zend_View_Exception('bogus message')));
+            // Log an error message so that there's something to send via email.
+            $log->err('a bogus error message to force mail sending');
 
-        // Log an error message so that there's something to send via email.
-        $log->err('a bogus error message to force mail sending');
+            unset($log);
+        }, E_USER_NOTICE | E_USER_WARNING);
 
-        unset($log);
+        $this->assertSame(E_USER_NOTICE, $errorType);
+        $this->assertStringContainsString(
+            'exception occurred when rendering layout; unable to set html body for message; message = bogus message',
+            $errorMessage
+        );
     }
 
     /**
@@ -518,6 +546,6 @@ class Zend_Log_Writer_MailTest extends TestCase
 }
 
 // Call Zend_Log_Writer_MailTest::main() if this source file is executed directly.
-if (PHPUnit_MAIN_METHOD === "Zend_Log_Writer_MailTest::main") {
+if (PHPUnit_MAIN_METHOD === "Zend_Log_Writer_MailTest::main" && basename($_SERVER['SCRIPT_FILENAME'] ?? '') !== 'phpunit') {
     Zend_Log_Writer_MailTest::main();
 }

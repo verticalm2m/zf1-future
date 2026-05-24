@@ -2530,14 +2530,6 @@ class Zend_Form_FormTest extends TestCase
         $this->assertEquals(array_keys($data), array_keys($return), var_export($return, 1));
     }
 
-    /**
-     * @doesNotPerformAssertions
-     */
-    public function testPersistDataStoresDataInSession()
-    {
-        $this->markTestIncomplete('Zend_Form does not implement session storage at this time');
-    }
-
     public function testCanCheckIfErrorsAreRegistered()
     {
         $this->assertFalse($this->form->hasErrors());
@@ -3356,7 +3348,6 @@ class Zend_Form_FormTest extends TestCase
      */
     public function testHiddenElementsGroupedWhenRendered()
     {
-        $this->markTestIncomplete('Scheduling for future release');
         $this->form->addElements([
             ['type' => 'hidden', 'name' => 'first', 'options' => ['value' => 'first value']],
             ['type' => 'text', 'name' => 'testone'],
@@ -3366,13 +3357,20 @@ class Zend_Form_FormTest extends TestCase
             ['type' => 'text', 'name' => 'testthree'],
         ]);
         $html = $this->form->render($this->getView());
-        if (!preg_match('#(<input type="hidden" name="[^>].*>\s*){3}#', $html, $matches)) {
-            $this->fail('Hidden elements should be grouped');
-        }
+
+        $positions = [];
         foreach (['first', 'second', 'third'] as $which) {
-            $this->assertMatchesRegularExpression('#<input[^]*name="' . $which . '"#', $matches[0]);
-            $this->assertMatchesRegularExpression('#<input[^]*value="' . $which . ' value"#', $matches[0]);
+            $pattern = '#<input[^>]+type="hidden"[^>]+name="' . $which . '"[^>]+value="' . $which . ' value"[^>]*/?>#';
+            $this->assertMatchesRegularExpression($pattern, $html);
+            $positions[$which] = strpos($html, 'name="' . $which . '"');
+            $this->assertNotFalse($positions[$which], 'Hidden element should be rendered');
         }
+
+        $this->assertLessThan($positions['second'], $positions['first']);
+        $this->assertLessThan($positions['third'], $positions['second']);
+        $this->assertStringContainsString('name="testone"', $html);
+        $this->assertStringContainsString('name="testtwo"', $html);
+        $this->assertStringContainsString('name="testthree"', $html);
     }
 
     // Localization
@@ -4046,7 +4044,18 @@ class Zend_Form_FormTest extends TestCase
         $form->reset();
         $test = $form->getValues();
         $this->assertNotEquals($values, $test);
-        $this->assertEquals(0, array_sum($test));
+        $this->assertSame(
+            [
+                'bar' => null,
+                'baz' => null,
+                'bat' => null,
+                'foo' => [
+                    'one' => null,
+                    'two' => null,
+                ],
+            ],
+            $test
+        );
     }
 
     /**

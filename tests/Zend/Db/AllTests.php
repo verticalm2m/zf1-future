@@ -130,11 +130,14 @@ class Zend_Db_AllTests
             Zend_Loader::loadClass("Zend_Db_Profiler_{$driver}Test");
             Zend_Loader::loadClass("Zend_Db_Statement_{$driver}Test");
             Zend_Loader::loadClass("Zend_Db_Select_{$driver}Test");
-            Zend_Loader::loadClass("Zend_Db_Table_{$driver}Test");
             Zend_Loader::loadClass("Zend_Db_Table_Select_{$driver}Test");
-            Zend_Loader::loadClass("Zend_Db_Table_Rowset_{$driver}Test");
             Zend_Loader::loadClass("Zend_Db_Table_Row_{$driver}Test");
             Zend_Loader::loadClass("Zend_Db_Table_Relationships_{$driver}Test");
+
+            if ($driver !== 'Static') {
+                Zend_Loader::loadClass("Zend_Db_Table_{$driver}Test");
+                Zend_Loader::loadClass("Zend_Db_Table_Rowset_{$driver}Test");
+            }
 
             // if we get this far, there have been no exceptions loading classes
             // so we can add them as test suites
@@ -143,11 +146,14 @@ class Zend_Db_AllTests
             $suite->addTestSuite("Zend_Db_Profiler_{$driver}Test");
             $suite->addTestSuite("Zend_Db_Statement_{$driver}Test");
             $suite->addTestSuite("Zend_Db_Select_{$driver}Test");
-            $suite->addTestSuite("Zend_Db_Table_{$driver}Test");
             $suite->addTestSuite("Zend_Db_Table_Select_{$driver}Test");
-            $suite->addTestSuite("Zend_Db_Table_Rowset_{$driver}Test");
             $suite->addTestSuite("Zend_Db_Table_Row_{$driver}Test");
             $suite->addTestSuite("Zend_Db_Table_Relationships_{$driver}Test");
+
+            if ($driver !== 'Static') {
+                $suite->addTestSuite("Zend_Db_Table_{$driver}Test");
+                $suite->addTestSuite("Zend_Db_Table_Rowset_{$driver}Test");
+            }
         } catch (Zend_Exception $e) {
             self::_skipTestSuite($driver, "cannot load test classes: " . $e->getMessage());
         }

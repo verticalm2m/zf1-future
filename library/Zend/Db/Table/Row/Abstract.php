@@ -166,8 +166,6 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             throw new Zend_Db_Table_Row_Exception('Specified column is not a string');
         }
 
-		$columnName = strtolower($columnName);
-		
         // Perform no transformation by default
         return $columnName;
     }
@@ -186,11 +184,6 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             require_once 'Zend/Db/Table/Row/Exception.php';
             throw new Zend_Db_Table_Row_Exception("Specified column \"$columnName\" is not in the row");
         }
-		if (is_null($this->_data[$columnName])) return null;
-		if (is_int($this->_data[$columnName])) return strval($this->_data[$columnName]);
-		if (substr($columnName, -3) == '_id') return strval($this->_data[$columnName]);
-		
-        
         $value = $this->_data[$columnName];
         if (is_null($value)) {
             return null;
@@ -684,20 +677,7 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     {
         $out = array();
         foreach ($this->_data as $columnName => $value) {
-			//$out[$columnName] = $value;
-			$colu = strtoupper($columnName);
-			if (is_null($value)) {
-				$out[$colu] = null;
-			}
-			else if (is_int($value)) {
-				$out[$colu] = strval($value);
-			}
-			else if (is_bool($value)) {
-				$out[$colu] = ($value ? '1' : '0');
-			}
-			else {
-				$out[$colu] = $value;
-			}
+            $out[$columnName] = $value;
         }
         return $out;
     }

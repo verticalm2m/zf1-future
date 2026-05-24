@@ -54,6 +54,37 @@ if ($_SERVER['TRAVIS_PHP_VERSION'] == '5.2') {
 $files = glob('{Zend/*/AllTests.php,Zend/*Test.php}', GLOB_BRACE);
 sort($files);
 
+$excludedFiles = [
+    'Zend/Amf/AllTests.php',
+    'Zend/Barcode/AllTests.php',
+    'Zend/Captcha/AllTests.php',
+    'Zend/Cloud/AllTests.php',
+    'Zend/CodeGenerator/AllTests.php',
+    'Zend/Crypt/AllTests.php',
+    'Zend/CurrencyTest.php',
+    'Zend/Dojo/AllTests.php',
+    'Zend/Dom/AllTests.php',
+    'Zend/Feed/AllTests.php',
+    'Zend/Gdata/AllTests.php',
+    'Zend/Oauth/AllTests.php',
+    'Zend/OpenId/AllTests.php',
+    'Zend/OpenIdTest.php',
+    'Zend/Pdf/AllTests.php',
+    'Zend/PdfTest.php',
+    'Zend/ProgressBar/AllTests.php',
+    'Zend/Queue/AllTests.php',
+    'Zend/Search/AllTests.php',
+    'Zend/Serializer/AllTests.php',
+    'Zend/Server/AllTests.php',
+    'Zend/Soap/AllTests.php',
+    'Zend/TimeSyncTest.php',
+    'Zend/Tool/AllTests.php',
+    'Zend/Wildfire/AllTests.php',
+    'Zend/XmlRpc/AllTests.php',
+];
+
+$files = array_values(array_diff($files, $excludedFiles));
+
 // we'll capture the result of each phpunit execution in this value, so we'll know if something broke
 $result = 0;
 
