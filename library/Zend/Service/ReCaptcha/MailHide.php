@@ -37,8 +37,8 @@ class Zend_Service_ReCaptcha_MailHide extends Zend_Service_ReCaptcha
     /**#@+
      * Encryption constants
      */
-    public const ENCRYPTION_MODE = MCRYPT_MODE_CBC;
-    public const ENCRYPTION_CIPHER = MCRYPT_RIJNDAEL_128;
+    public const ENCRYPTION_MODE = 'cbc';
+    public const ENCRYPTION_CIPHER = 'aes-128-cbc';
     public const ENCRYPTION_BLOCK_SIZE = 16;
     public const ENCRYPTION_IV = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
     /**#@-*/
@@ -93,8 +93,8 @@ class Zend_Service_ReCaptcha_MailHide extends Zend_Service_ReCaptcha
      */
     public function __construct($publicKey = null, $privateKey = null, $email = null, $options = null)
     {
-        /* Require the mcrypt extension to be loaded */
-        $this->_requireMcrypt();
+        /* Require OpenSSL support for the MailHide encryption step */
+        $this->_requireOpenSsl();
 
         /* If options is a Zend_Config object we want to convert it to an array so we can merge it with the default options */
         if ($options instanceof Zend_Config) {
@@ -144,17 +144,17 @@ class Zend_Service_ReCaptcha_MailHide extends Zend_Service_ReCaptcha
 
 
     /**
-     * See if the mcrypt extension is available
+     * See if the OpenSSL extension is available
      *
      * @throws Zend_Service_ReCaptcha_MailHide_Exception
      */
-    protected function _requireMcrypt()
+    protected function _requireOpenSsl()
     {
-        if (!extension_loaded('mcrypt')) {
+        if (!extension_loaded('openssl') || !function_exists('openssl_encrypt')) {
             /** @see Zend_Service_ReCaptcha_MailHide_Exception */
             require_once 'Zend/Service/ReCaptcha/MailHide/Exception.php';
 
-            throw new Zend_Service_ReCaptcha_MailHide_Exception('Use of the Zend_Service_ReCaptcha_MailHide component requires the mcrypt extension to be enabled in PHP');
+            throw new Zend_Service_ReCaptcha_MailHide_Exception('Use of the Zend_Service_ReCaptcha_MailHide component requires the OpenSSL extension to be enabled in PHP');
         }
     }
 
@@ -334,6 +334,8 @@ class Zend_Service_ReCaptcha_MailHide extends Zend_Service_ReCaptcha
      */
     protected function _getUrl()
     {
+        $this->_requireOpenSsl();
+
         /* Figure out how much we need to pad the email */
         $numPad = self::ENCRYPTION_BLOCK_SIZE - (strlen($this->_email) % self::ENCRYPTION_BLOCK_SIZE);
 
@@ -341,7 +343,19 @@ class Zend_Service_ReCaptcha_MailHide extends Zend_Service_ReCaptcha
         $emailPadded = str_pad($this->_email, strlen($this->_email) + $numPad, chr($numPad));
 
         /* Encrypt the email */
-        $emailEncrypted = mcrypt_encrypt(self::ENCRYPTION_CIPHER, $this->_privateKeyPacked, $emailPadded, self::ENCRYPTION_MODE, self::ENCRYPTION_IV);
+        $emailEncrypted = openssl_encrypt(
+            $emailPadded,
+            self::ENCRYPTION_CIPHER,
+            $this->_privateKeyPacked,
+            OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
+            self::ENCRYPTION_IV
+        );
+
+        if ($emailEncrypted === false) {
+            /** @see Zend_Service_ReCaptcha_MailHide_Exception */
+            require_once 'Zend/Service/ReCaptcha/MailHide/Exception.php';
+            throw new Zend_Service_ReCaptcha_MailHide_Exception('Unable to encrypt the MailHide payload with OpenSSL');
+        }
 
         /* Return the url */
         return self::MAILHIDE_SERVER . '?k=' . $this->_publicKey . '&c=' . strtr(base64_encode($emailEncrypted), '+/', '-_');

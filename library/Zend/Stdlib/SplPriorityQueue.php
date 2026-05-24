@@ -30,7 +30,7 @@
  * @copyright  Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
-class Zend_Stdlib_SplPriorityQueue extends SplPriorityQueue implements Serializable
+class Zend_Stdlib_SplPriorityQueue extends SplPriorityQueue
 {
     /**
      * @var int Seed used to ensure queue order for items of the same priority

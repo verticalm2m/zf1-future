@@ -28,7 +28,7 @@
  * @copyright  Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
-interface Zend_Http_UserAgent_Device extends Serializable
+interface Zend_Http_UserAgent_Device
 {
     /**
      * Constructor
@@ -43,6 +43,36 @@ interface Zend_Http_UserAgent_Device extends Serializable
      * @return void
      */
     public function __construct($userAgent = null, array $server = [], array $config = []);
+
+    /**
+     * Serialize the device state.
+     *
+     * @return string|null
+     */
+    public function serialize(): ?string;
+
+    /**
+     * Restore the device state from a serialized payload.
+     *
+     * @param string $serialized
+     * @return void
+     */
+    public function unserialize($serialized): void;
+
+    /**
+     * Serialize the device state to an array.
+     *
+     * @return array
+     */
+    public function __serialize(): array;
+
+    /**
+     * Restore the device state from an array.
+     *
+     * @param array $spec
+     * @return void
+     */
+    public function __unserialize(array $spec): void;
 
     /**
      * Attempt to match the user agent

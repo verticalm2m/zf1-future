@@ -34,7 +34,7 @@
  * @copyright  Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
-class Zend_Http_UserAgent implements Serializable
+class Zend_Http_UserAgent
 {
     /**
      * 'desktop' by default if the sequence return false for each item or is empty

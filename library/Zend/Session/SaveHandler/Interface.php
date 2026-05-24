@@ -30,7 +30,7 @@
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  * @see        http://php.net/session_set_save_handler
  */
-interface Zend_Session_SaveHandler_Interface
+interface Zend_Session_SaveHandler_Interface extends SessionHandlerInterface
 {
 
     /**
@@ -39,20 +39,20 @@ interface Zend_Session_SaveHandler_Interface
      * @param string $save_path
      * @param string $name
      */
-    public function open($save_path, $name);
+    public function open(string $save_path, string $name): bool;
 
     /**
      * Close Session - free resources
      *
      */
-    public function close();
+    public function close(): bool;
 
     /**
      * Read session data
      *
      * @param string $id
      */
-    public function read($id);
+    public function read(string $id): string|false;
 
     /**
      * Write Session - commit data to resource
@@ -60,7 +60,7 @@ interface Zend_Session_SaveHandler_Interface
      * @param string $id
      * @param mixed $data
      */
-    public function write($id, $data);
+    public function write(string $id, string $data): bool;
 
     /**
      * Destroy Session - remove data from resource for
@@ -68,7 +68,7 @@ interface Zend_Session_SaveHandler_Interface
      *
      * @param string $id
      */
-    public function destroy($id);
+    public function destroy(string $id): bool;
 
     /**
      * Garbage Collection - remove old session data older
@@ -76,5 +76,5 @@ interface Zend_Session_SaveHandler_Interface
      *
      * @param int $maxlifetime
      */
-    public function gc($maxlifetime);
+    public function gc(int $maxlifetime): int|false;
 }

@@ -73,10 +73,7 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     public function __construct($options)
     {
-        if (!extension_loaded('mcrypt')) {
-            require_once 'Zend/Filter/Exception.php';
-            throw new Zend_Filter_Exception('This filter needs the mcrypt extension');
-        }
+        $this->_assertMcryptIsAvailable();
 
         if ($options instanceof Zend_Config) {
             $options = $options->toArray();
@@ -113,6 +110,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     public function setEncryption($options)
     {
+        $this->_assertMcryptIsAvailable();
+
         if (is_string($options)) {
             $options = ['key' => $options];
         }
@@ -168,6 +167,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     public function setVector($vector = null)
     {
+        $this->_assertMcryptIsAvailable();
+
         $cipher = $this->_openCipher();
         $size   = mcrypt_enc_get_iv_size($cipher);
         if (empty($vector)) {
@@ -226,6 +227,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     public function encrypt($value)
     {
+        $this->_assertMcryptIsAvailable();
+
         // compress prior to encryption
         if (!empty($this->_compression)) {
             require_once 'Zend/Filter/Compress.php';
@@ -252,6 +255,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     public function decrypt($value)
     {
+        $this->_assertMcryptIsAvailable();
+
         $cipher = $this->_openCipher();
         $this->_initCipher($cipher);
         $decrypted = mdecrypt_generic($cipher, $value);
@@ -286,6 +291,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     protected function _openCipher()
     {
+        $this->_assertMcryptIsAvailable();
+
         $cipher = mcrypt_module_open(
             $this->_encryption['algorithm'],
             $this->_encryption['algorithm_directory'],
@@ -308,6 +315,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     protected function _closeCipher($cipher)
     {
+        $this->_assertMcryptIsAvailable();
+
         mcrypt_module_close($cipher);
 
         return $this;
@@ -322,6 +331,8 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
      */
     protected function _initCipher($cipher)
     {
+        $this->_assertMcryptIsAvailable();
+
         $key = $this->_encryption['key'];
 
         $keysizes = mcrypt_enc_get_supported_key_sizes($cipher);
@@ -340,5 +351,23 @@ class Zend_Filter_Encrypt_Mcrypt implements Zend_Filter_Encrypt_Interface
         }
 
         return $this;
+    }
+
+    /**
+     * Guard against using the removed mcrypt extension on modern PHP.
+     *
+     * @throws Zend_Filter_Exception
+     * @return void
+     */
+    protected function _assertMcryptIsAvailable()
+    {
+        if (function_exists('mcrypt_module_open')) {
+            return;
+        }
+
+        require_once 'Zend/Filter/Exception.php';
+        throw new Zend_Filter_Exception(
+            'Zend_Filter_Encrypt_Mcrypt is not supported on this PHP runtime because the mcrypt extension has been removed.'
+        );
     }
 }

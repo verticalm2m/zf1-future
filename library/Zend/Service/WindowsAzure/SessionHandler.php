@@ -27,7 +27,7 @@
  * @copyright  Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
-class Zend_Service_WindowsAzure_SessionHandler
+class Zend_Service_WindowsAzure_SessionHandler implements SessionHandlerInterface
 {
 	/**
 	 * Maximal property size in table storage.
@@ -108,15 +108,9 @@ class Zend_Service_WindowsAzure_SessionHandler
 	 *
 	 * @return boolean
 	 */
-	public function register()
-	{
-        return session_set_save_handler([$this, 'open'],
-                                        [$this, 'close'],
-                                        [$this, 'read'],
-                                        [$this, 'write'],
-                                        [$this, 'destroy'],
-                                        [$this, 'gc']
-        );
+    public function register()
+    {
+        return session_set_save_handler($this, true);
 	}
 
     /**
@@ -124,10 +118,10 @@ class Zend_Service_WindowsAzure_SessionHandler
      *
      * @return bool
      */
-    public function open()
+    public function open(string $savePath, string $sessionName): bool
     {
-    	// Make sure storage container exists
-    	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
+	    // Make sure storage container exists
+	    if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
     		$this->_storage->createTableIfNotExists($this->_sessionContainer);
     	} else if ($this->_storageType == self::STORAGE_TYPE_BLOB) {
     		$this->_storage->createContainerIfNotExists($this->_sessionContainer);
@@ -142,7 +136,7 @@ class Zend_Service_WindowsAzure_SessionHandler
      *
      * @return bool
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
@@ -153,10 +147,10 @@ class Zend_Service_WindowsAzure_SessionHandler
      * @param int $id Session Id
      * @return string
      */
-    public function read($id)
+    public function read(string $id): string|false
     {
-    	// Read data
-       	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
+	    // Read data
+        	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
     		// In table storage
 	        try
 	        {
@@ -165,7 +159,7 @@ class Zend_Service_WindowsAzure_SessionHandler
 	                $this->_sessionContainerPartition,
 	                $id
 	            );
-	            return unserialize(base64_decode($sessionRecord->serializedData));
+	            return $this->_decodeSessionData($sessionRecord->serializedData);
 	        }
 	        catch (Zend_Service_WindowsAzure_Exception $ex)
 	        {
@@ -176,16 +170,18 @@ class Zend_Service_WindowsAzure_SessionHandler
     	    try
 	        {
     			$data = $this->_storage->getBlobData(
-    				$this->_sessionContainer,
-    				$this->_sessionContainerPartition . '/' . $id
-    			);
-	            return unserialize(base64_decode($data));
+	    			$this->_sessionContainer,
+	    			$this->_sessionContainerPartition . '/' . $id
+	    		);
+	            return $this->_decodeSessionData($data);
 	        }
 	        catch (Zend_Service_WindowsAzure_Exception $ex)
 	        {
-	            return false;
+	            return '';
 	        }
-    	}
+	    }
+
+        return '';
     }
 
     /**
@@ -195,13 +191,13 @@ class Zend_Service_WindowsAzure_SessionHandler
      * @param string $serializedData Serialized PHP object
      * @throws Exception
      */
-    public function write($id, $serializedData)
+    public function write(string $id, string $serializedData): bool
     {
-    	// Encode data
-    	$serializedData = base64_encode(serialize($serializedData));
-    	if (strlen($serializedData) >= self::MAX_TS_PROPERTY_SIZE && $this->_storageType == self::STORAGE_TYPE_TABLE) {
-    		throw new Zend_Service_WindowsAzure_Exception('Session data exceeds the maximum allowed size of ' . self::MAX_TS_PROPERTY_SIZE . ' bytes that can be stored using table storage. Consider switching to a blob storage back-end or try reducing session data size.');
-    	}
+	    // Encode data
+	    $serializedData = base64_encode($serializedData);
+	    if (strlen($serializedData) >= self::MAX_TS_PROPERTY_SIZE && $this->_storageType == self::STORAGE_TYPE_TABLE) {
+	    	throw new Zend_Service_WindowsAzure_Exception('Session data exceeds the maximum allowed size of ' . self::MAX_TS_PROPERTY_SIZE . ' bytes that can be stored using table storage. Consider switching to a blob storage back-end or try reducing session data size.');
+	    }
 
     	// Store data
        	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
@@ -218,17 +214,31 @@ class Zend_Service_WindowsAzure_SessionHandler
 	        }
 	        catch (Zend_Service_WindowsAzure_Exception $unknownRecord)
 	        {
-	            $this->_storage->insertEntity($this->_sessionContainer, $sessionRecord);
+	            try {
+	                $this->_storage->insertEntity($this->_sessionContainer, $sessionRecord);
+	            } catch (Zend_Service_WindowsAzure_Exception $ex) {
+	                return false;
+	            }
 	        }
-    	} else if ($this->_storageType == self::STORAGE_TYPE_BLOB) {
-    		// In blob storage
-    		$this->_storage->putBlobData(
-    			$this->_sessionContainer,
-    			$this->_sessionContainerPartition . '/' . $id,
-    			$serializedData,
-    			['sessionexpires' => time()]
-    		);
-    	}
+
+	        return true;
+	    } else if ($this->_storageType == self::STORAGE_TYPE_BLOB) {
+	    	// In blob storage
+	    	try {
+	    		$this->_storage->putBlobData(
+	    			$this->_sessionContainer,
+	    			$this->_sessionContainerPartition . '/' . $id,
+	    			$serializedData,
+	    			['sessionexpires' => time()]
+	    		);
+	    	} catch (Zend_Service_WindowsAzure_Exception $ex) {
+	    		return false;
+	    	}
+
+	    	return true;
+	    }
+
+        return false;
     }
 
     /**
@@ -237,7 +247,7 @@ class Zend_Service_WindowsAzure_SessionHandler
      * @param int $id Session Id
      * @return boolean
      */
-    public function destroy($id)
+    public function destroy(string $id): bool
     {
 		// Destroy data
        	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
@@ -271,8 +281,10 @@ class Zend_Service_WindowsAzure_SessionHandler
 	        catch (Zend_Service_WindowsAzure_Exception $ex)
 	        {
 	            return false;
-	        }
-    	}
+	    }
+
+        return false;
+    }
     }
 
     /**
@@ -285,40 +297,70 @@ class Zend_Service_WindowsAzure_SessionHandler
      * @usage Execution rate 1/100 (session.gc_probability/session.gc_divisor)
      * @return boolean
      */
-    public function gc($lifeTime)
+    public function gc(int $lifeTime): int|false
     {
-       	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
-    		// In table storage
-       	    try
+        	if ($this->_storageType == self::STORAGE_TYPE_TABLE) {
+	    	// In table storage
+        	    try
 	        {
 	            $result = $this->_storage->retrieveEntities($this->_sessionContainer, 'PartitionKey eq \'' . $this->_sessionContainerPartition . '\' and sessionExpires lt ' . (time() - $lifeTime));
+	            $deleted = 0;
 	            foreach ($result as $sessionRecord)
 	            {
 	                $this->_storage->deleteEntity($this->_sessionContainer, $sessionRecord);
+	                ++$deleted;
 	            }
-	            return true;
+	            return $deleted;
 	        }
 	        catch (Zend_Service_WindowsAzure_Exception $ex)
 	        {
 	            return false;
 	        }
     	} else if ($this->_storageType == self::STORAGE_TYPE_BLOB) {
-    		// In blob storage
-    	    try
+	    	// In blob storage
+	    	    try
 	        {
 	            $result = $this->_storage->listBlobs($this->_sessionContainer, $this->_sessionContainerPartition, '', null, null, 'metadata');
+	            $deleted = 0;
 	            foreach ($result as $sessionRecord)
 	            {
 	            	if ($sessionRecord->Metadata['sessionexpires'] < (time() - $lifeTime)) {
 	                	$this->_storage->deleteBlob($this->_sessionContainer, $sessionRecord->Name);
+	                	++$deleted;
 	            	}
 	            }
-	            return true;
+	            return $deleted;
 	        }
 	        catch (Zend_Service_WindowsAzure_Exception $ex)
 	        {
 	            return false;
 	        }
-    	}
+	    }
+
+        return false;
+    }
+
+    /**
+     * Decode a stored session payload.
+     *
+     * Older releases wrapped the session payload in serialize() before base64
+     * encoding it; PHP 8 session handlers expect the raw encoded session string.
+     *
+     * @param string $payload
+     * @return string
+     */
+    protected function _decodeSessionData($payload)
+    {
+        $decoded = base64_decode($payload, true);
+        if ($decoded === false) {
+            return '';
+        }
+
+        $legacyPayload = @unserialize($decoded, ['allowed_classes' => false]);
+        if (is_string($legacyPayload)) {
+            return $legacyPayload;
+        }
+
+        return $decoded;
     }
 }
