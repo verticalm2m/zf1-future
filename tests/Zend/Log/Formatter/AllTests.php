@@ -28,7 +28,6 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     define('PHPUnit_MAIN_METHOD', 'Zend_Log_Formatter_AllTests::main');
 }
 
-require_once 'Zend/Log/Formatter/FirebugTest.php';
 require_once 'Zend/Log/Formatter/SimpleTest.php';
 require_once 'Zend/Log/Formatter/XmlTest.php';
 
@@ -52,7 +51,6 @@ class Zend_Log_Formatter_AllTests
     {
         $suite = new TestSuite('Zend Framework - Zend_Log_Formatter');
 
-        $suite->addTestSuite('Zend_Log_Formatter_FirebugTest');
         $suite->addTestSuite('Zend_Log_Formatter_SimpleTest');
         $suite->addTestSuite('Zend_Log_Formatter_XmlTest');
 

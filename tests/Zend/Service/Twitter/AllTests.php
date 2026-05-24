@@ -28,8 +28,6 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     define('PHPUnit_MAIN_METHOD', 'Zend_Service_Twitter_AllTests::main');
 }
 
-require_once 'Zend/Service/Twitter/TwitterTest.php';
-
 /**
  * @category   Zend
  * @package    Zend_Service_Twitter
@@ -59,8 +57,6 @@ class Zend_Service_Twitter_AllTests
     public static function suite()
     {
         $suite = new TestSuite('Zend Framework - Zend_Service_Twitter');
-
-        $suite->addTestSuite('Zend_Service_Twitter_TwitterTest');
 
         return $suite;
     }

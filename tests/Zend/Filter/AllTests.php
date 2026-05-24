@@ -86,7 +86,6 @@ require_once 'Zend/Filter/Word/UnderscoreToSeparatorTest.php';
 */
 
 require_once 'Zend/Filter/Compress/AllTests.php';
-require_once 'Zend/Filter/Encrypt/AllTests.php';
 require_once 'Zend/Filter/File/AllTests.php';
 require_once 'Zend/Filter/Word/AllTests.php';
 
@@ -174,7 +173,6 @@ class Zend_Filter_AllTests
 */
 
         $suite->addTest(Zend_Filter_Compress_AllTests::suite());
-        $suite->addTest(Zend_Filter_Encrypt_AllTests::suite());
         $suite->addTest(Zend_Filter_File_AllTests::suite());
         $suite->addTest(Zend_Filter_Word_AllTests::suite());
 

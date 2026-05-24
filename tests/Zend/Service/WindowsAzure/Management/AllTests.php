@@ -33,8 +33,6 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     define('PHPUnit_MAIN_METHOD', 'Zend_Service_WindowsAzure_Management_AllTests::main');
 }
 
-require_once 'Zend/Service/WindowsAzure/Management/ManagementClientTest.php';
-
 /**
  * @category   Zend
  * @package    Zend_Service_WindowsAzure
@@ -53,7 +51,6 @@ class Zend_Service_WindowsAzure_Management_AllTests
     public static function suite()
     {
         $suite = new TestSuite(__CLASS__);
-        $suite->addTestSuite('Zend_Service_WindowsAzure_Management_ManagementClientTest');
         
         return $suite;
     }
