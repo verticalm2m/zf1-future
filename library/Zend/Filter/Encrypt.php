@@ -47,7 +47,7 @@ class Zend_Filter_Encrypt implements Zend_Filter_Interface
     /**
      * Class constructor
      *
-     * @param string|array $options (Optional) Options to set, if null OpenSSL is used when available
+     * @param string|array $options (Optional) Options to set, if null OpenSSL is used
      */
     public function __construct($options = null)
     {
@@ -82,7 +82,12 @@ class Zend_Filter_Encrypt implements Zend_Filter_Interface
             $adapter = $options['adapter'];
             unset($options['adapter']);
         } else {
-            $adapter = extension_loaded('openssl') ? 'Openssl' : 'Mcrypt';
+            $adapter = 'Openssl';
+        }
+
+        if (strcasecmp($adapter, 'mcrypt') === 0) {
+            require_once 'Zend/Filter/Exception.php';
+            throw new Zend_Filter_Exception('The Mcrypt adapter is no longer supported. Use the Openssl adapter instead.');
         }
 
         if (!is_array($options)) {

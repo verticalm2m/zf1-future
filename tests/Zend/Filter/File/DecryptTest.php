@@ -41,12 +41,16 @@ class Zend_Filter_File_DecryptTest extends TestCase
 {
     protected function set_up()
     {
-        if (!extension_loaded('mcrypt')) {
-            $this->markTestSkipped('This filter needs the mcrypt extension');
+        if (!extension_loaded('openssl')) {
+            $this->markTestSkipped('This filter needs the openssl extension');
         }
 
-        if (extension_loaded('mcrypt') && version_compare(PHP_VERSION, '7.1.0', '>=')) {
-            $this->markTestSkipped('mcrypt_* function has been DEPRECATED as of PHP 7.1.0 and REMOVED as of PHP 7.2.0. Relying on this function is highly discouraged.');
+        if (!in_array('rc4', openssl_get_cipher_methods(), true)) {
+            $this->markTestSkipped('This filter needs a version of OpenSSL that supports the RC4 cipher');
+        }
+
+        if (empty(array_intersect(['md5', 'md5-rsa'], openssl_get_md_methods()))) {
+            $this->markTestSkipped('The keys used by this test need a version of OpenSSL that supports MD5 and MD5-RSA as message digest');
         }
 
         if (file_exists(dirname(__FILE__) . '/../_files/newencryption.txt')) {
@@ -69,6 +73,16 @@ class Zend_Filter_File_DecryptTest extends TestCase
         }
     }
 
+    protected function getPassphrase()
+    {
+        return 'zPUp9mCzIrM7xQOEnPJZiDkBwPBV9UlITY0Xd3v4bfIwzJ12yPQCAkcR5BsePGVw
+RK6GS5RwXSLrJu9Qj8+fk0wPj6IPY5HvA9Dgwh+dptPlXppeBm3JZJ+92l0DqR2M
+ccL43V3Z4JN9OXRAfGWXyrBJNmwURkq7a2EyFElBBWK03OLYVMevQyRJcMKY0ai+
+tmnFUSkH2zwnkXQfPUxg9aV7TmGQv/3TkK1SziyDyNm7GwtyIlfcigCCRz3uc77U
+Izcez5wgmkpNElg/D7/VCd9E+grTfPYNmuTVccGOes+n8ISJJdW0vYX1xwWv5l
+bK22CwD/l7SMBOz4M9XH0Jb0OhNxLza4XMDu0ANMIpnkn1KOcmQ4gB8fmAbBt';
+    }
+
     /**
      * Ensures that the filter follows expected behavior
      *
@@ -78,23 +92,26 @@ class Zend_Filter_File_DecryptTest extends TestCase
     {
         $filter = new Zend_Filter_File_Encrypt();
         $filter->setFilename(dirname(__FILE__) . '/../_files/newencryption.txt');
+        $filter->setPublicKey(dirname(__FILE__) . '/../_files/publickey.pem');
 
         $this->assertEquals(
             dirname(__FILE__) . '/../_files/newencryption.txt',
             $filter->getFilename()
         );
 
-        $filter->setVector('testvect');
         $filter->filter(dirname(__FILE__) . '/../_files/encryption.txt');
+        $envelopeKeys = $filter->getEnvelopeKey();
 
         $filter = new Zend_Filter_File_Decrypt();
+        $filter->setPassphrase($this->getPassphrase());
+        $filter->setPrivateKey(dirname(__FILE__) . '/../_files/privatekey.pem');
+        $filter->setEnvelopeKey($envelopeKeys);
 
         $this->assertNotEquals(
             'Encryption',
             file_get_contents(dirname(__FILE__) . '/../_files/newencryption.txt')
         );
 
-        $filter->setVector('testvect');
         $this->assertEquals(
             dirname(__FILE__) . '/../_files/newencryption.txt',
             $filter->filter(dirname(__FILE__) . '/../_files/newencryption.txt')
@@ -110,11 +127,13 @@ class Zend_Filter_File_DecryptTest extends TestCase
     {
         $filter = new Zend_Filter_File_Encrypt();
         $filter->setFilename(dirname(__FILE__) . '/../_files/newencryption.txt');
-        $filter->setVector('testvect');
+        $filter->setPublicKey(dirname(__FILE__) . '/../_files/publickey.pem');
         $this->assertEquals(
             dirname(__FILE__) . '/../_files/newencryption.txt',
             $filter->filter(dirname(__FILE__) . '/../_files/encryption.txt')
         );
+
+        $envelopeKeys = $filter->getEnvelopeKey();
 
         $this->assertNotEquals(
             'Encryption',
@@ -123,13 +142,15 @@ class Zend_Filter_File_DecryptTest extends TestCase
 
         $filter = new Zend_Filter_File_Decrypt();
         $filter->setFilename(dirname(__FILE__) . '/../_files/newencryption2.txt');
+        $filter->setPassphrase($this->getPassphrase());
+        $filter->setPrivateKey(dirname(__FILE__) . '/../_files/privatekey.pem');
+        $filter->setEnvelopeKey($envelopeKeys);
 
         $this->assertEquals(
             dirname(__FILE__) . '/../_files/newencryption2.txt',
             $filter->getFilename()
         );
 
-        $filter->setVector('testvect');
         $input = $filter->filter(dirname(__FILE__) . '/../_files/newencryption.txt');
         $this->assertEquals(dirname(__FILE__) . '/../_files/newencryption2.txt', $input);
 
@@ -145,7 +166,6 @@ class Zend_Filter_File_DecryptTest extends TestCase
     public function testNonExistingFile()
     {
         $filter = new Zend_Filter_File_Decrypt();
-        $filter->setVector('testvect');
 
         try {
             $filter->filter(dirname(__FILE__) . '/../_files/nofile.txt');
