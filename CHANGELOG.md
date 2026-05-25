@@ -6,7 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.24.4] - 2025-06-26
+## [1.25.0] - 2026-05-25
+
+### Changed
+
+* **BREAKING**: PHP requirement changed from >=7.1 to >=8.1
+* Repository moved to https://github.com/verticalm2m/zf1-future
+
+### Added
+
+* PHP 8.5 compatibility
+* Customizable regex in Zend_Db_Select for compatibility with original ZF1 by @mauriziosmt in https://github.com/verticalm2m/zf1-future/pull/513
+
+### Fixed
+
+* PHP 8.5: Fix missing non-canonical cast by @sukhwinder33445 in https://github.com/verticalm2m/zf1-future/pull/517
+* PHP 8.4: Fix missing escape parameter by @sreichel in https://github.com/verticalm2m/zf1-future/pull/509
+* Fix object caching in Zend_Translate_Adapter by @onelab in https://github.com/verticalm2m/zf1-future/pull/504
+* Fix parameter type in PHPDoc for FileTransferAdapter addValidator by @holtkamp in https://github.com/verticalm2m/zf1-future/pull/503
+* Update MySQL and OpenLDAP images to legacy versions by @sreichel in https://github.com/verticalm2m/zf1-future/pull/515
+* Various DocBlock fixes and code cleanup
+
+### Removed
+
+* MCrypt support removed
+* GitHub workflow removed
+
+## [1.24.6] - 2025-06-26
 
 ### Added
 
