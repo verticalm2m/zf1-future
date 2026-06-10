@@ -865,7 +865,6 @@ abstract class Zend_Db_Table_Abstract
     {
         $function = $type ? 'strtoupper' : 'strtolower';
         $newArr = array();
-        //格式化后的数组
         foreach ($arr as $k => $v) {
             if (is_array($v)) {
                 $newArr[$k] = array_change_value_case($v, $type);
