@@ -618,7 +618,7 @@ class Zend_Db_Select
         }
 
         foreach ($spec as $val) {
-			$val = strtolower($val);
+			$val = strtolower((string) $val);
             // Remove comments from SQL statement
             $noComments = preg_replace(self::REGEX_SQL_COMMENTS, '$1', (string) $val);
             if (preg_match($this->_regexColumnExprGroup, $noComments)) {
@@ -644,7 +644,7 @@ class Zend_Db_Select
      */
     public function having($cond, $value = null, $type = null)
     {
-		$cond = strtolower($cond);
+		$cond = strtolower((string) $cond);
         if ($value !== null) {
             $cond = $this->_adapter->quoteInto($cond, $value, $type);
         }
@@ -672,7 +672,7 @@ class Zend_Db_Select
      */
     public function orHaving($cond, $value = null, $type = null)
     {
-		$cond = strtolower($cond);
+		$cond = strtolower((string) $cond);
         if ($value !== null) {
             $cond = $this->_adapter->quoteInto($cond, $value, $type);
         }
@@ -710,7 +710,7 @@ class Zend_Db_Select
                 if (empty($val)) {
                     continue;
                 }
-				$val = strtolower($val);
+			$val = strtolower((string) $val);
                 $direction = self::SQL_ASC;
                 if (preg_match('/(.*\W)(' . self::SQL_ASC . '|' . self::SQL_DESC . ')\b/si', $val, $matches)) {
                     $val = trim($matches[1]);
@@ -784,7 +784,7 @@ class Zend_Db_Select
      */
     public function getPart($part)
     {
-        $part = strtolower($part);
+        $part = strtolower((string) $part);
         if (!array_key_exists($part, $this->_parts)) {
             require_once 'Zend/Db/Select/Exception.php';
             throw new Zend_Db_Select_Exception("Invalid Select part '$part'");
@@ -950,7 +950,7 @@ class Zend_Db_Select
                 'joinType'      => $type,
                 'schema'        => $schema,
                 'tableName'     => $tableName,
-                'joinCondition' => strtolower($cond)
+                'joinCondition' => is_string($cond) ? strtolower($cond) : ''
                 ];
             while ($tmpFromParts) {
                 $currentCorrelationName = key($tmpFromParts);
